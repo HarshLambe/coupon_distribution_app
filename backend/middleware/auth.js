@@ -38,9 +38,11 @@ const captureUserInfo = (req, res, next) => {
   let browserFingerprint = req.cookies.browserFingerprint;
   
   if (!browserFingerprint) {
-    // Generate a simple fingerprint (in a real app, use a more robust solution)
-    browserFingerprint = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
+    // Generate a unique fingerprint for this device
+    const userAgent = req.headers['user-agent'] || '';
+    const randomValue = Math.random().toString(36).substring(2, 15);
+    const timestamp = Date.now();
+    browserFingerprint = Buffer.from(`${userAgent}-${randomValue}-${timestamp}`).toString('base64');
     
     // Set cookie for 30 days
     res.cookie('browserFingerprint', browserFingerprint, {
@@ -48,7 +50,8 @@ const captureUserInfo = (req, res, next) => {
       httpOnly: true,
       sameSite: 'none',
       secure: true,
-      domain: process.env.COOKIE_DOMAIN || undefined
+      domain: process.env.COOKIE_DOMAIN || undefined,
+      path: '/'
     });
   }
   
