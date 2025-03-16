@@ -11,10 +11,28 @@ const claimRateLimiter = rateLimit({
 });
 
 // Custom middleware to check if user has already claimed a coupon
-// This is now a placeholder that always allows the request to proceed
 const checkPreviousClaims = async (req, res, next) => {
-  // Simply proceed to the next middleware
-  next();
+  try {
+    // Check if this browser fingerprint has already claimed a coupon
+    const existingClaim = await UserClaim.findOne({
+      browserFingerprint: req.userInfo.browserFingerprint
+    });
+    
+    if (existingClaim) {
+      return res.status(403).json({ 
+        message: 'You have already claimed a coupon. Each device can only claim one coupon.',
+        alreadyClaimed: true,
+        claimedAt: existingClaim.claimedAt
+      });
+    }
+    
+    // If no previous claim, proceed to the next middleware
+    next();
+  } catch (error) {
+    console.error('Error checking previous claims:', error);
+    // In case of error, allow the request to proceed
+    next();
+  }
 };
 
 module.exports = {
