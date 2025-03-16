@@ -2,7 +2,16 @@ const jwt = require('jsonwebtoken');
 
 // Middleware to verify admin JWT token
 const authenticateAdmin = (req, res, next) => {
-  const token = req.cookies.adminToken || req.header('Authorization')?.replace('Bearer ', '');
+  // Try to get token from cookies first, then from Authorization header
+  let token = req.cookies.adminToken;
+  
+  // If not in cookies, check Authorization header
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
   
   if (!token) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -37,7 +46,9 @@ const captureUserInfo = (req, res, next) => {
     res.cookie('browserFingerprint', browserFingerprint, {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'none',
+      secure: true,
+      domain: process.env.COOKIE_DOMAIN || undefined
     });
   }
   
