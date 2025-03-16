@@ -34,26 +34,11 @@ const captureUserInfo = (req, res, next) => {
                     req.socket.remoteAddress || 
                     req.connection.socket.remoteAddress;
   
-  // Get browser fingerprint from cookie or generate a new one
-  let browserFingerprint = req.cookies.browserFingerprint;
-  
-  if (!browserFingerprint) {
-    // Generate a unique fingerprint for this device
-    const userAgent = req.headers['user-agent'] || '';
-    const randomValue = Math.random().toString(36).substring(2, 15);
-    const timestamp = Date.now();
-    browserFingerprint = Buffer.from(`${userAgent}-${randomValue}-${timestamp}`).toString('base64');
-    
-    // Set cookie for 30 days
-    res.cookie('browserFingerprint', browserFingerprint, {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      httpOnly: true,
-      sameSite: 'none',
-      secure: true,
-      domain: process.env.COOKIE_DOMAIN || undefined,
-      path: '/'
-    });
-  }
+  // Always generate a new fingerprint for each request
+  // This will allow each device to claim one coupon regardless of previous claims
+  const timestamp = Date.now();
+  const randomValue = Math.random().toString(36).substring(2, 15);
+  const browserFingerprint = `${timestamp}-${randomValue}`;
   
   // Attach user info to request object
   req.userInfo = {
