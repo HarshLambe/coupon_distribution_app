@@ -68,16 +68,16 @@ router.get('/check', authenticateAdmin, (req, res) => {
   res.status(200).json({ isAuthenticated: true });
 });
 
-// Create initial admin (for setup)
-router.post('/setup', async (req, res) => {
+// Create new admin (requires admin authentication)
+router.post('/setup', authenticateAdmin, async (req, res) => {
   try {
-    // Check if any admin already exists
-    const adminCount = await Admin.countDocuments();
-    if (adminCount > 0) {
-      return res.status(400).json({ message: 'Admin already exists' });
-    }
-    
     const { username, password } = req.body;
+    
+    // Check if username already exists
+    const existingAdmin = await Admin.findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
     
     // Create new admin
     const admin = new Admin({
