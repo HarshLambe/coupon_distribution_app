@@ -29,11 +29,13 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
     
-    // Set token as HTTP-only cookie
+    // Set token as HTTP-only cookie with cross-domain support
     res.cookie('adminToken', token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 1 day
-      sameSite: 'lax'
+      sameSite: 'none',
+      secure: true,
+      domain: process.env.COOKIE_DOMAIN || undefined
     });
     
     res.status(200).json({
@@ -51,7 +53,12 @@ router.post('/login', async (req, res) => {
 
 // Admin logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('adminToken');
+  res.clearCookie('adminToken', {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+    domain: process.env.COOKIE_DOMAIN || undefined
+  });
   res.status(200).json({ message: 'Logout successful' });
 });
 
