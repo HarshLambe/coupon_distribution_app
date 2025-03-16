@@ -34,11 +34,24 @@ const captureUserInfo = (req, res, next) => {
                     req.socket.remoteAddress || 
                     req.connection.socket.remoteAddress;
   
-  // Always generate a new fingerprint for each request
-  // This will allow each device to claim one coupon regardless of previous claims
-  const timestamp = Date.now();
-  const randomValue = Math.random().toString(36).substring(2, 15);
-  const browserFingerprint = `${timestamp}-${randomValue}`;
+  // Get browser fingerprint from cookie or generate a new one
+  let browserFingerprint = req.cookies.browserFingerprint;
+  
+  if (!browserFingerprint) {
+    // Generate a new fingerprint
+    const timestamp = Date.now();
+    const randomValue = Math.random().toString(36).substring(2, 15);
+    browserFingerprint = `${timestamp}-${randomValue}`;
+    
+    // Store in cookie with very permissive settings to ensure it works across domains
+    res.cookie('browserFingerprint', browserFingerprint, {
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      httpOnly: false, // Allow JavaScript access
+      sameSite: 'none',
+      secure: true,
+      path: '/'
+    });
+  }
   
   // Attach user info to request object
   req.userInfo = {
